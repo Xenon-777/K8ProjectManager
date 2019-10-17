@@ -68,7 +68,7 @@ class Pot(object):
         image = self.config.get_object(container, "image")
         if image is not None:
             if not self.config.has_option(container, "name"):
-                name = sub("[:/.]", "_", self.config.get_object(container, "image"))
+                name = sub("[:/.]", "-", self.config.get_object(container, "image"))
                 self.config.set(container, "name", name)
         else:
             ErrorHandling.print_error_config(self.config, self.language["con02"], locals(), bold=True)
