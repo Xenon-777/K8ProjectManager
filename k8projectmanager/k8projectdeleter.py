@@ -79,13 +79,17 @@ class K8ProjectDeleter(K8ProjectGenerator):
         """Löscht die einzelnene Kubernetes Objecte"""
         body_dict = body.to_dict()
         try:
-            if k8pg_name in self.k8_modul_no_namespace and self.arg.deleteall:
-                api_response = self.k8_delete[k8pg_name]["k8_methode"](name=body_dict["metadata"]["name"], pretty="true")
+            if k8pg_name in self.k8_modul_no_namespace:
+                if self.arg.deleteall:
+                    api_response = self.k8_delete[k8pg_name]["k8_methode"](name=body_dict["metadata"]["name"], pretty="true")
+                else:
+                    api_response = None
             else:
                 api_response = self.k8_delete[k8pg_name]["k8_methode"](namespace=self.config.get_object("namespace", "name"), name=body_dict["metadata"]["name"], pretty="true")
-            print("%s Opject: %s (Type: %s)" % (Color.color_text(" DELETE ", color=Color.BOLD, long=20, fill="-"), body_dict["metadata"]["name"], k8pg_name))
-            pprint(api_response)
-            sleep(1)
+            if api_response is not None:
+                print("%s Opject: %s (Type: %s)" % (Color.color_text(" DELETE ", color=Color.BOLD, long=20, fill="-"), body_dict["metadata"]["name"], k8pg_name))
+                pprint(api_response)
+                sleep(5)
         except ApiException as e:
             error_body = eval(e.body)
             ErrorHandling.print_K8Exection(self.config, error_body, self.language["main03"], k8pg_name)

@@ -90,7 +90,7 @@ class Ingress(Spezific):
 
         if self.config.has_option("ingress", "backend_host"):
             backend = K8IngressBackend(self.config.get_object("ingress", "backend_host"),
-                                               self.config.get_object("ingress", "backend_port"))
+                                       self.config.get_object("ingress", "backend_port", integer=True))
         else:
             backend = None
 
@@ -123,7 +123,7 @@ class Ingress(Spezific):
     def set_ingress_rules(self):
         """Handhabung für scalirte Rule Definitionen für das Ingress Object"""
         rules = []
-        self.config.copy_option_to_option("service", "ingress", "port", from_pre="_target", to_option="rule", to_pre="_port")
+        self.config.copy_option_to_option("service", "ingress", "port", to_option="rule", to_pre="_port")
         for rule in self.config.config_iteral("ingress", "rule", pre="_host"):
             rule_spec = self.set_ingress_rule(rule)
             if rule_spec is not None:
@@ -139,18 +139,18 @@ class Ingress(Spezific):
         rule_nr = rule_host.split("_")[0]
         port_nr = rule_nr.replace("rule", "port")
 
-        self.config.copy_option_to_option("service", "ingress", port_nr, from_pre="_name", to_option=rule_nr, to_pre="_servicename", iteral=False)
-        self.config.copy_option_to_option("service", "ingress", port_nr, from_pre="_target", to_option=rule_nr, to_pre="_port", iteral=False)
+        self.config.copy_option_to_option("service", "ingress", "name", to_option=rule_nr, to_pre="_servicename", iteral=False)
+        self.config.copy_option_to_option("service", "ingress", port_nr, to_option=rule_nr, to_pre="_port", iteral=False)
         service_port = self.config.get_object("ingress", rule_nr, pre="_servicename")
         if service_port is not None:
             if service_port.startswith("@p"):
-                self.config.copy_option_to_option("service", "ingress", service_port[1:], from_pre="_name", to_option=rule_nr, to_pre="_servicename", change=True, iteral=False)
-                self.config.copy_option_to_option("service", "ingress", service_port[1:], from_pre="_target", to_option=rule_nr, to_pre="_port", change=True, iteral=False)
+                self.config.copy_option_to_option("service", "ingress", "name", to_option=rule_nr, to_pre="_servicename", change=True, iteral=False)
+                self.config.copy_option_to_option("service", "ingress", service_port[1:], to_option=rule_nr, to_pre="_port", change=True, iteral=False)
             if service_port.startswith("@s"):
-                self.config.copy_option_to_option(service_port[1:], "ingress", "port", from_pre="_name", to_option=rule_nr, to_pre="_servicename", change=True, iteral=False)
-                self.config.copy_option_to_option(service_port[1:], "ingress", "port", from_pre="_target", to_option=rule_nr, to_pre="_port", change=True, iteral=False)
+                self.config.copy_option_to_option(service_port[1:], "ingress", "name", to_option=rule_nr, to_pre="_servicename", change=True, iteral=False)
+                self.config.copy_option_to_option(service_port[1:], "ingress", "port", to_option=rule_nr, to_pre="_port", change=True, iteral=False)
         host = self.config.get_object("ingress", rule_host)
-        port = self.config.get_object("ingress", rule_nr, pre="_port")
+        port = self.config.get_object("ingress", rule_nr, pre="_port", integer=True)
         servicname = self.config.get_object("ingress", rule_nr, pre="_servicename")
 
         if host is None or port is None or servicname is None:

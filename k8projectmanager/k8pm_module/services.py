@@ -25,15 +25,15 @@ class Services(object):
                                                          "extern_ips":    [True,
                                                                            False,
                                                                            "IP"],
-                                                         "port":          [True,
+                                                         "port":          [False,
                                                                            True,
-                                                                           "Zahl@"],
+                                                                           "Zahl"],
                                                          "port_name":     [True,
                                                                            True,
                                                                            "Text"],
-                                                         "port_target":   [False,
+                                                         "port_target":   [True,
                                                                            True,
-                                                                           "Zahl"],
+                                                                           "Zahl@"],
                                                          "port_protocol": [True,
                                                                            True,
                                                                            "TCP,UDP"]}})
@@ -77,7 +77,7 @@ class Services(object):
             external_i_ps = None
 
         ports = []
-        for port in self.config.config_iteral(service, "port", pre="_target"):
+        for port in self.config.config_iteral(service, "port", no="_"):
             service_port = self.set_service_port(service, port)
             if service_port is None:
                 self.config.config_status = ErrorHandling.print_error("%s (%s)" % (self.language["ser02"], service))
@@ -85,7 +85,7 @@ class Services(object):
             ports.append(self.set_service_port(service, port))
         if not ports:
             self.config.config_status = ErrorHandling.print_error_config(self.config, "%s (%s)" % (self.language["ser03"], metadata["name"]), locals(), bold=True)
-            ports = self.config.config_iteral(service, "port", pre="_target")
+            ports = self.config.config_iteral(service, "port", no="_")
             if len(ports) == 0:
                 self.config.config_status = ErrorHandling.print_error("%s (%s)" % (self.language["ser01"], service))
             return None
@@ -97,34 +97,34 @@ class Services(object):
                       ports=ports)
         return K8Service(metadata=metadata, spec=spec)
 
-    def set_service_port(self, service, port_target):
+    def set_service_port(self, service, port):
         """Port Definitions Ermitlung für das Service Object"""
-        port_nr = port_target.split("_")[0]
+        port_target = "%s_target" % port
 
-        if self.config.has_option(service, port_nr):
-            port_intern = self.config.get_object(service, port_nr)
+        if self.config.has_option(service, port_target):
+            port_intern = self.config.get_object(service, port_target)
             if port_intern.startswith("@c"):
                 container_ports = self.config.get_object(port_intern[1:], "ports", modul="pot")
                 if container_ports is None:
-                    self.config.config_status = ErrorHandling.print_error_config(self.config, "%s ( %s, %s, %s)" % (self.language["ser01"], port_intern, port_nr, service), locals(), bold=True)
+                    self.config.config_status = ErrorHandling.print_error_config(self.config, "%s ( %s, %s, %s)" % (self.language["ser01"], port_intern, port, service), locals(), bold=True)
                     return None
                 container_ports = container_ports.split(",")
-                self.config.set(service, port_nr, container_ports[0])
+                self.config.set(service, port_target, container_ports[0])
         else:
-            if self.config.has_option("template", port_nr):
-                self.config.copy_option_to_option("template", service, port_nr, iteral=False)
+            if self.config.has_option("template", port):
+                self.config.copy_option_to_option("template", service, port, to_option=port_target, iteral=False)
             else:
                 return None
 
-        if not self.config.has_option(service, "%s_name" % port_nr):
-            self.config.set(service, "%s_name" % port_nr, "%s-%s-%s" % (self.config.project_name, service, port_nr))
+        if not self.config.has_option(service, "%s_name" % port):
+            self.config.set(service, "%s_name" % port, "%s-%s-%s" % (self.config.project_name, service, port))
 
-        if self.config.has_option(service, "%s_protocol" % port_nr):
-            protocol = self.config.get_object(service, port_nr, pre="_protocol")
+        if self.config.has_option(service, "%s_protocol" % port):
+            protocol = self.config.get_object(service, port, pre="_protocol")
         else:
             protocol = None
 
-        return K8Port(port=self.config.get_object(service, port_nr, integer=True),
-                      name=self.config.get_object(service, port_nr, pre="_name"),
+        return K8Port(port=self.config.get_object(service, port, integer=True),
+                      name=self.config.get_object(service, port, pre="_name"),
                       target_port=self.config.get_object(service, port_target, integer=True),
                       protocol=protocol)
