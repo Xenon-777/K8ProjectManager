@@ -101,12 +101,13 @@ class Pot(object):
             volumes = None
 
         return [K8Container(name=self.config.get_object("container", "name"),
-                           image=self.config.get_object("container", "image"),
-                           command=command,
-                           args=args,
-                           env=envs,
-                           volume_mounts=volumes,
-                           ports=ports)]
+                            image=self.config.get_object("container", "image"),
+                            command=command,
+                            args=args,
+                            env=envs,
+                            volume_mounts=volumes,
+                            ports=ports,
+                            image_pull_policy="Always")]
 
     def set_container_env(self, container, env_nr):
         """Ermitlung der ENV Definition in einen Pod/Container Object"""
