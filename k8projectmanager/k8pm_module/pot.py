@@ -17,7 +17,7 @@ class Pot(object):
         super().__init__()
         self.config = None
         self.language = None
-        self.k8pg_option_to_section.update({"pot": {"__section__": [True],
+        self.k8pg_option_to_section.update({"pot": {"__section__": [False],
                                                     "name":        [True,
                                                                     False,
                                                                     "Text"],
@@ -47,41 +47,28 @@ class Pot(object):
                                                                     "Path@"],
                                                     }})
 
-    def set_containers(self):
-        """Handhabung von scalirten Pod/Container Definitionen"""
-        self.config.activ_modul = "pot"
-        container_list = []
-
-        containers = self.config.config_iteral("container")
-        for container in containers:
-            container_list.append(self.set_container(container))
-
-        if not container_list:
-            ErrorHandling.print_error_config(self.config, self.language["con01"], locals(), bold=True)
-            return None
-        return container_list
-
-    def set_container(self, container):
+    def set_container(self):
         """Erstellt ein Pod/Container Object"""
+        self.config.activ_modul = "pot"
 
         # Ermittle Image
-        image = self.config.get_object(container, "image")
+        image = self.config.get_object("container", "image")
         if image is not None:
-            if not self.config.has_option(container, "name"):
-                name = sub("[:/.]", "-", self.config.get_object(container, "image"))
-                self.config.set(container, "name", name)
+            if not self.config.has_option("container", "name"):
+                name = sub("[:/.]", "-", self.config.get_object("container", "image"))
+                self.config.set("container", "name", name)
         else:
             ErrorHandling.print_error_config(self.config, self.language["con02"], locals(), bold=True)
             return None
 
         # Ermitle Ports
         ports = []
-        if self.config.has_option(container, "ports"):
+        if self.config.has_option("container", "ports"):
             pre_ports = self.config.config_iteral("template", "port")
             pre_ports = len(pre_ports)
             if self.config.has_option("template", "port"):
                 pre_ports = pre_ports - 1
-            for port in self.config.get_object(container, "ports").split(","):
+            for port in self.config.get_object("container", "ports").split(","):
                 ports.append(K8Port(container_port=int(port)))
                 pre_ports = pre_ports + 1
                 self.config.set("template", "port%i" % pre_ports, port)
@@ -91,47 +78,48 @@ class Pot(object):
             ports = None
 
         envs = []
-        for env in self.config.config_iteral(container, "env", no="_value"):
-            envs.append(self.set_container_env(container, env))
+        for env in self.config.config_iteral("container", "env", no="_value"):
+            envs.append(self.set_container_env("container", env))
         if not envs:
             envs = None
 
-        if self.config.has_option(container, "command"):
-            command = self.config.get_object(container, "command").split(" ")
+        if self.config.has_option("container", "command"):
+            command = self.config.get_object("container", "command").split(" ")
         else:
             command = None
 
         args = []
-        for arg in self.config.config_iteral(container, "arg"):
-            args.append(self.set_container_arg(container, arg))
+        for arg in self.config.config_iteral("container", "arg"):
+            args.append(self.set_container_arg("container", arg))
         if not args:
             args = None
 
         volumes = []
-        for volume in self.config.config_iteral(container, "volume", pre="_path"):
-            volumes.append(self.set_container_volume(container, volume))
+        for volume in self.config.config_iteral("container", "volume", pre="_path"):
+            volumes.append(self.set_container_volume("container", volume))
         if not volumes:
             volumes = None
 
-        return K8Container(name=self.config.get_object(container, "name"),
-                           image=self.config.get_object(container, "image"),
+        return [K8Container(name=self.config.get_object("container", "name"),
+                           image=self.config.get_object("container", "image"),
                            command=command,
                            args=args,
                            env=envs,
                            volume_mounts=volumes,
-                           ports=ports)
+                           ports=ports)]
 
     def set_container_env(self, container, env_nr):
         """Ermitlung der ENV Definition in einen Pod/Container Object"""
         env = self.config.get_object(container, env_nr)
         if env.startswith("@"):
             alter_container = env[1:]
-            self.config.copy_option_to_option(alter_container, container, env_nr, change=True)
-            self.config.copy_option_to_option(alter_container, container, env_nr, to_pre="_value")
-        env_value = self.config.get_object(container, env_nr, pre="_value")
-        if env_value.startswith("@"):
-            alter_container = env_value[1:]
-            self.config.copy_option_to_option(alter_container, container, env_nr, from_pre="_value", to_pre="_value", change=True)
+            self.config.copy_option_to_option(alter_container, container, env_nr, change=True, iteral=False)
+            self.config.copy_option_to_option(alter_container, container, env_nr, from_pre="_value", to_pre="_value", iteral=False)
+        if self.config.has_option(container, "%s_value" % env_nr):
+            env_value = self.config.get_object(container, env_nr, pre="_value")
+            if env_value.startswith("@"):
+                alter_container = env_value[1:]
+                self.config.copy_option_to_option(alter_container, container, env_nr, from_pre="_value", to_pre="_value", change=True, iteral=False)
         return K8Env(name=self.config.get_object(container, env_nr),
                      value=self.config.get_object(container, env_nr, pre="_value"))
 

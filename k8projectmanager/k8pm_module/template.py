@@ -60,8 +60,8 @@ class Template(Pot):
 
         volumes = self.set_template_volumes()
 
-        containers = self.set_containers()
-        if containers is None:
+        container = self.set_container()
+        if container is None:
             self.config.config_status = ErrorHandling.print_error_config(self.config, self.language["tem02"], locals(), bold=True)
             return None
 
@@ -70,7 +70,7 @@ class Template(Pot):
         else:
             restart = None
 
-        spec = K8spec(containers=containers, volumes=volumes, restart_policy=restart)
+        spec = K8spec(containers=container, volumes=volumes, restart_policy=restart)
 
         return K8Template(metadata=metadata, spec=spec)
 
