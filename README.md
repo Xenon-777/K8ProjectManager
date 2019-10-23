@@ -4,7 +4,7 @@ Kubernetes Project Manager zum erstellen, patchen und löschen von Kubernetes Pr
 Sorry ... hab die Anleitung noch nicht geschrieben ... mach ich die nächsten Tage/Wochen
 
 bis dahin:
-- mit -p bekommt ihr die möglichen Config Optionen (das "s" an ende einer Section nicht mitschreiben, alle Sektionen sind in plural 
+- mit -p bekommt ihr die möglichen Config Optionen (das "s" an ende einer Section nicht mitschreiben, alle Sektionen sind in singular 
   außer "[claims]" das aber nur ein Keyword-Section ist falls zu allen Volumes jeweils ein Claim erstellt werden soll). 
 - "scalirbar" heist man kann mehrere Sectoren und/oder Optionen in die config schreiben.
   z.B. [volume1] [volume2] oder unter [ingress] rule1_host= rule2_host=
