@@ -7,6 +7,7 @@ from kubernetes.client import ExtensionsV1beta1HTTPIngressPath as K8IngressPath
 from kubernetes.client import ExtensionsV1beta1HTTPIngressRuleValue as K8IngressRuleValue
 from kubernetes.client import ExtensionsV1beta1IngressBackend as K8IngressBackend
 from kubernetes.client import ExtensionsV1beta1IngressRule as K8IngressRule
+from kubernetes.client import ExtensionsV1beta1IngressTLS as K8IngressTLS
 
 from k8projectmanager.k8pm_module.ingress_spezific import Spezific
 from k8projectmanager.k8pm_sub_methoden.sub_methodes import ErrorHandling
@@ -164,13 +165,13 @@ class Ingress(Spezific):
 
     def set_ingress_tls_s(self):
         """Handhabung für scalirte TLS Definitionen für das Ingress Object"""
-        spec = {"tls": []}
+        tls_list = []
         for tls in self.config.config_iteral("ingress", "tls", pre="_hosts"):
-            spec["tls"].append(self.set_ingress_tls(tls))
+            tls_list.append(self.set_ingress_tls(tls))
 
-        if not spec["tls"]:
+        if not tls_list:
             return None
-        return spec
+        return tls_list
 
     def set_ingress_tls(self, tls_hosts):
         """Ermitlung einer TLS Definition für das Ingress Object"""
@@ -182,7 +183,7 @@ class Ingress(Spezific):
         hosts = self.config.get_object("ingress", tls_hosts)
         if hosts.startswith("@"):
             self.config.copy_option_to_option_in_section("ingress", rule_nr, from_pre="_host", to_option=tls_hosts, change=True, iteral=False)
-            hosts = self.config.get_object("ingress", tls_hosts)
+            hosts = self.config.get_object("ingress", tls_hosts).split(",")
 
         self.config.copy_option_to_option(secret_nr, "ingress", "name", to_option=tls_nr, to_pre="_secret", iteral=False)
         if self.config.has_option("ingress", "%s_secret" % tls_nr):
@@ -191,5 +192,5 @@ class Ingress(Spezific):
             self.config.config_status = ErrorHandling.print_error_config(self.config, "%s (%s)" % (self.language["ing05"], tls_nr), locals(), bold=True)
             return None
 
-        return {"hosts":      hosts,
-                "secretName": secret}
+        return K8IngressTLS(hosts=hosts,
+                            secret_name=secret)

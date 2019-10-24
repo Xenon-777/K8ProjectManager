@@ -61,16 +61,14 @@ class SecretSystem(object):
             return None
 
         try:
-            tls_key = open(tls_key, "r")
-            tls_crt = open(tls_crt, "r")
+            tls_key = open(tls_key, "rb")
+            tls_crt = open(tls_crt, "rb")
         except FileNotFoundError as e:
             self.config.config_status = ErrorHandling.print_error_config(self.config, "%s (%s)" % (self.language["s_s03"], e), locals(), bold=True)
             return None
-        tls_key_b64 = b64encode(tls_key.read().encode("utf-8"))
-        tls_crt_b64 = b64encode(tls_crt.read().encode("utf-8"))
+        data["tls.key"] = b64encode(tls_key.read()).decode("ASCII")
+        data["tls.crt"] = b64encode(tls_crt.read()).decode("ASCII")
         tls_key.close()
         tls_crt.close()
-        data["tls.key"] = tls_key_b64
-        data["tls.crt"] = tls_crt_b64
 
         return K8Secret(data=data, metadata=metadata, type=secret_type)
