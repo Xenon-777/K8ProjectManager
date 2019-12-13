@@ -15,42 +15,42 @@ class Claims(object):
         super().__init__()
         self.config = None
         self.language = None
-        self.k8pg_option_to_section.update({"claims": {"__section__":  [True],
-                                                       "name":         [True,
+        self.k8pg_option_to_section.update(dict(claim={"__section__":  (True,),
+                                                       "name":         (True,
                                                                         False,
                                                                         "Text@",
                                                                         "name",
                                                                         True,
-                                                                        "cla01"],
-                                                       "accessmodes":  [True,
+                                                                        "cla01"),
+                                                       "accessmodes":  (True,
                                                                         False,
                                                                         "ReadWriteOnce,ReadOnlyMany,ReadWriteMany",
                                                                         "accessmodes",
                                                                         False,
-                                                                        "cla02"],
-                                                       "requests":     [True,
+                                                                        "cla02"),
+                                                       "requests":     (True,
                                                                         False,
                                                                         "Text.i",
                                                                         "capacity",
                                                                         False,
-                                                                        "cla03"],
-                                                       "volume_class": [True,
+                                                                        "cla03"),
+                                                       "volume_class": (True,
                                                                         False,
                                                                         "Text@",
                                                                         "class",
                                                                         False,
-                                                                        "cla04"]}})
+                                                                        "cla04")}))
 
     def set_claims(self):
         """Handhabung von scalirten Claim Definitionen in der Config"""
-        self.config.activ_modul = "claims"
+        self.config.activ_modul = "claim"
         claims = []
         if self.config.has_section("claims"):
             self.config.set_sections_from_sections_iteral("volume", "claim")
+            self.config.remove_section("claims")
 
         for claim in self.config.config_iteral("claim"):
-            if claim != "claims":
-                claims.append(self.set_claim(claim))
+            claims.append(self.set_claim(claim))
 
         if not claims:
             return None
@@ -58,8 +58,9 @@ class Claims(object):
 
     def set_claim(self, claim):
         """Erstelle ein Claim Object"""
+        self.config.activ_modul = "claim"
         claim_options = {}
-        claim_options.update(self.k8pg_option_to_section["claims"])
+        claim_options.update(self.k8pg_option_to_section["claim"])
         del claim_options["__section__"]
         volume = claim.replace("claim", "volume")
         spec = {"storageClassName": None,

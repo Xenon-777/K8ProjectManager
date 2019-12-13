@@ -18,37 +18,37 @@ class Ingress(Spezific):
 
     def __init__(self):
         super().__init__()
-        self.k8pg_option_to_section["ingress"].update({"__section__":      [False],
-                                                       "name":             [True,
+        self.k8pg_option_to_section["ingress"].update({"__section__":      (False,),
+                                                       "name":             (True,
                                                                             False,
-                                                                            "Text"],
-                                                       "backend_host":     [True,
+                                                                            "Text"),
+                                                       "backend_host":     (True,
                                                                             False,
-                                                                            "Text"],
-                                                       "backend_port":     [True,
+                                                                            "Text"),
+                                                       "backend_port":     (True,
                                                                             False,
-                                                                            "Zahl"],
-                                                       "rule_host":        [True,
+                                                                            "Zahl"),
+                                                       "rule_host":        (True,
                                                                             True,
-                                                                            "Text"],
-                                                       "rule_port":        [True,
+                                                                            "Text"),
+                                                       "rule_port":        (True,
                                                                             True,
-                                                                            "Zahl"],
-                                                       "rule_servicename": [True,
+                                                                            "Zahl"),
+                                                       "rule_servicename": (True,
                                                                             True,
-                                                                            "Text@"],
-                                                       "annotation":       [True,
+                                                                            "Text@"),
+                                                       "annotation":       (True,
                                                                             True,
-                                                                            "Text@"],
-                                                       "annotation_value": [True,
+                                                                            "Text@"),
+                                                       "annotation_value": (True,
                                                                             True,
-                                                                            "Text"],
-                                                       "tls_hosts":        [True,
+                                                                            "Text"),
+                                                       "tls_hosts":        (True,
                                                                             True,
-                                                                            "Text@"],
-                                                       "tls_secret":       [True,
+                                                                            "Text@"),
+                                                       "tls_secret":       (True,
                                                                             True,
-                                                                            "Text"]})
+                                                                            "Text")})
 
     def set_ingress(self):
         """Erstelt Ingress Object"""
@@ -56,46 +56,46 @@ class Ingress(Spezific):
         metadata = {"name": None}
         spec = {}
 
-        if not self.config.has_section("ingress"):
+        if not self.config.has_section("ingress1"):
             return None
 
-        if not self.config.has_option("ingress", "name"):
-            if self.config.has_option("template", "label"):
-                name = self.config.get_object("template", "label", modul="template")
+        if not self.config.has_option("ingress1", "name"):
+            if self.config.has_option("template1", "label"):
+                name = self.config.get_object("template1", "label", modul="template")
                 name = name.split(",")[1]
-                self.config.set("ingress", "name", name)
+                self.config.set("ingress1", "name", name)
             else:
-                self.config.set("ingress", "name", self.config.project_name)
+                self.config.set("ingress1", "name", self.config.project_name)
 
         annotations = {}
-        if self.config.has_option("ingress", "whitelist"):
+        if self.config.has_option("ingress1", "whitelist"):
             annotations.update(self.insert_whitelist())
 
-        if len(self.config.config_iteral("ingress", "rule", pre="_host")) > 0:
+        if len(self.config.config_iteral("ingress1", "rule", pre="_host")) > 0:
             rules = self.set_ingress_rules()
         else:
             rules = None
 
-        if self.config.has_option("ingress", "ssl_backends"):
+        if self.config.has_option("ingress1", "ssl_backends"):
             ssl_backend = self.insert_ssl_backend()
             if ssl_backend is None:
                 self.config.config_status = ErrorHandling.print_error_config(self.config, self.language["ing01"], locals(), bold=True)
                 return None
             annotations.update(self.insert_ssl_backend())
 
-        if len(self.config.config_iteral("ingress", "annotation", no="_value")) > 0:
+        if len(self.config.config_iteral("ingress1", "annotation", no="_value")) > 0:
             annotations.update(self.set_ingress_annotations())
 
         if annotations == {}:
             annotations = None
 
-        if self.config.has_option("ingress", "backend_host"):
-            backend = K8IngressBackend(self.config.get_object("ingress", "backend_host"),
-                                       self.config.get_object("ingress", "backend_port", integer=True))
+        if self.config.has_option("ingress1", "backend_host"):
+            backend = K8IngressBackend(self.config.get_object("ingress1", "backend_host"),
+                                       self.config.get_object("ingress1", "backend_port", integer=True))
         else:
             backend = None
 
-        if self.config.has_option("ingress", "tls_hosts") or self.config.has_option("ingress", "tls1_hosts"):
+        if self.config.has_option("ingress1", "tls_hosts") or self.config.has_option("ingress1", "tls1_hosts"):
             tls = self.set_ingress_tls_s()
         else:
             tls = None
@@ -104,16 +104,16 @@ class Ingress(Spezific):
             self.config.config_status = ErrorHandling.print_error_config(self.config, self.language["ing02"], locals(), bold=True)
             return None
 
-        metadata = K8Meta(annotations=annotations, name=self.config.get_object("ingress", "name"))
+        metadata = K8Meta(annotations=annotations, name=self.config.get_object("ingress1", "name"))
         spec = K8Spec(backend=backend, rules=rules, tls=tls)
 
-        return K8Ingress(metadata=metadata, spec=spec)
+        return [K8Ingress(metadata=metadata, spec=spec)]
 
     def set_ingress_annotations(self):
         """Ermitlung der Anntations Definitionen für das Ingress Object"""
         annotations = {}
-        for annotation in self.config.config_iteral("ingress", "annotation", no="_value"):
-            value = self.config.get_object("ingress", annotation, pre="_value")
+        for annotation in self.config.config_iteral("ingress1", "annotation", no="_value"):
+            value = self.config.get_object("ingress1", annotation, pre="_value")
             if value is not None:
                 annotations[annotation] = value
             else:
@@ -124,8 +124,8 @@ class Ingress(Spezific):
     def set_ingress_rules(self):
         """Handhabung für scalirte Rule Definitionen für das Ingress Object"""
         rules = []
-        self.config.copy_option_to_option("service", "ingress", "port", to_option="rule", to_pre="_port")
-        for rule in self.config.config_iteral("ingress", "rule", pre="_host"):
+        self.config.copy_option_to_option("service", "ingress1", "port", to_option="rule", to_pre="_port")
+        for rule in self.config.config_iteral("ingress1", "rule", pre="_host"):
             rule_spec = self.set_ingress_rule(rule)
             if rule_spec is not None:
                 rules.append(self.set_ingress_rule(rule))
@@ -140,19 +140,19 @@ class Ingress(Spezific):
         rule_nr = rule_host.split("_")[0]
         port_nr = rule_nr.replace("rule", "port")
 
-        self.config.copy_option_to_option("service", "ingress", "name", to_option=rule_nr, to_pre="_servicename", iteral=False)
-        self.config.copy_option_to_option("service", "ingress", port_nr, to_option=rule_nr, to_pre="_port", iteral=False)
-        service_port = self.config.get_object("ingress", rule_nr, pre="_servicename")
+        self.config.copy_option_to_option("service1", "ingress1", "name", to_option=rule_nr, to_pre="_servicename", iteral=False)
+        self.config.copy_option_to_option("service1", "ingress1", port_nr, to_option=rule_nr, to_pre="_port", iteral=False)
+        service_port = self.config.get_object("ingress1", rule_nr, pre="_servicename")
         if service_port is not None:
             if service_port.startswith("@p"):
-                self.config.copy_option_to_option("service", "ingress", "name", to_option=rule_nr, to_pre="_servicename", change=True, iteral=False)
-                self.config.copy_option_to_option("service", "ingress", service_port[1:], to_option=rule_nr, to_pre="_port", change=True, iteral=False)
+                self.config.copy_option_to_option("service1", "ingress1", "name", to_option=rule_nr, to_pre="_servicename", change=True, iteral=False)
+                self.config.copy_option_to_option("service1", "ingress1", service_port[1:], to_option=rule_nr, to_pre="_port", change=True, iteral=False)
             if service_port.startswith("@s"):
-                self.config.copy_option_to_option(service_port[1:], "ingress", "name", to_option=rule_nr, to_pre="_servicename", change=True, iteral=False)
-                self.config.copy_option_to_option(service_port[1:], "ingress", "port", to_option=rule_nr, to_pre="_port", change=True, iteral=False)
-        host = self.config.get_object("ingress", rule_host)
-        port = self.config.get_object("ingress", rule_nr, pre="_port", integer=True)
-        servicname = self.config.get_object("ingress", rule_nr, pre="_servicename")
+                self.config.copy_option_to_option(service_port[1:], "ingress1", "name", to_option=rule_nr, to_pre="_servicename", change=True, iteral=False)
+                self.config.copy_option_to_option(service_port[1:], "ingress1", "port", to_option=rule_nr, to_pre="_port", change=True, iteral=False)
+        host = self.config.get_object("ingress1", rule_host)
+        port = self.config.get_object("ingress1", rule_nr, pre="_port", integer=True)
+        servicname = self.config.get_object("ingress1", rule_nr, pre="_servicename")
 
         if host is None or port is None or servicname is None:
             self.config.config_status = ErrorHandling.print_error_config(self.config, self.language["ing04"], locals(), bold=True)
@@ -161,12 +161,12 @@ class Ingress(Spezific):
         http = K8IngressPath(http)
         http = K8IngressRuleValue([http])
 
-        return K8IngressRule(self.config.get_object("ingress", rule_host), http)
+        return K8IngressRule(self.config.get_object("ingress1", rule_host), http)
 
     def set_ingress_tls_s(self):
         """Handhabung für scalirte TLS Definitionen für das Ingress Object"""
         tls_list = []
-        for tls in self.config.config_iteral("ingress", "tls", pre="_hosts"):
+        for tls in self.config.config_iteral("ingress1", "tls", pre="_hosts"):
             tls_list.append(self.set_ingress_tls(tls))
 
         if not tls_list:
@@ -180,14 +180,14 @@ class Ingress(Spezific):
         secret_nr = tls_nr.replace("tls", "secret")
         secret = None
 
-        hosts = self.config.get_object("ingress", tls_hosts)
-        if hosts.startswith("@"):
-            self.config.copy_option_to_option_in_section("ingress", rule_nr, from_pre="_host", to_option=tls_hosts, change=True, iteral=False)
-            hosts = self.config.get_object("ingress", tls_hosts).split(",")
+        hosts = self.config.get_object("ingress1", tls_hosts).split(",")
+        if hosts[0].startswith("@"):
+            self.config.copy_option_to_option_in_section("ingress1", rule_nr, from_pre="_host", to_option=tls_hosts, change=True, iteral=False)
+            hosts = self.config.get_object("ingress1", tls_hosts).split(",")
 
-        self.config.copy_option_to_option(secret_nr, "ingress", "name", to_option=tls_nr, to_pre="_secret", iteral=False)
-        if self.config.has_option("ingress", "%s_secret" % tls_nr):
-            secret = self.config.get_object("ingress", tls_nr, pre="_secret")
+        self.config.copy_option_to_option("%s1" % secret_nr, "ingress1", "name", to_option=tls_nr, to_pre="_secret", iteral=False)
+        if self.config.has_option("ingress1", "%s_secret" % tls_nr):
+            secret = self.config.get_object("ingress1", tls_nr, pre="_secret")
         else:
             self.config.config_status = ErrorHandling.print_error_config(self.config, "%s (%s)" % (self.language["ing05"], tls_nr), locals(), bold=True)
             return None

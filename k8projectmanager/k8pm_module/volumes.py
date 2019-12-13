@@ -13,35 +13,35 @@ class Volumes(VolumeDrives):
 
     def __init__(self):
         super().__init__()
-        self.k8pg_option_to_section.update({"volumes": {"__section__": [True],
-                                                        "name":        [False,
+        self.k8pg_option_to_section.update(dict(volume={"__section__": (True,),
+                                                        "name":        (False,
                                                                         False,
-                                                                        "Text"],
-                                                        "label":       [False,
+                                                                        "Text"),
+                                                        "label":       (False,
                                                                         False,
-                                                                        "Text_List"],
-                                                        "accessmodes": [False,
+                                                                        "Text_List"),
+                                                        "accessmodes": (False,
                                                                         False,
-                                                                        "ReadWriteOnce,ReadOnlyMany,ReadWriteMany"],
-                                                        "capacity":    [False,
+                                                                        "ReadWriteOnce,ReadOnlyMany,ReadWriteMany"),
+                                                        "capacity":    (False,
                                                                         False,
-                                                                        "Text.i"],
-                                                        "class":       [False,
+                                                                        "Text.i"),
+                                                        "class":       (False,
                                                                         False,
-                                                                        "Text"],
-                                                        "drive":       [False,
+                                                                        "Text"),
+                                                        "drive":       (False,
                                                                         False,
-                                                                        "nfs"],
-                                                        "server":      [False,
+                                                                        "nfs"),
+                                                        "server":      (False,
                                                                         False,
-                                                                        "URL/IP"],
-                                                        "path":        [False,
+                                                                        "URL/IP"),
+                                                        "path":        (False,
                                                                         False,
-                                                                        "Path"]}})
+                                                                        "Path")}))
 
     def set_volumes(self):
         """Handhabung von scalirten Volume Definitionen in der Config"""
-        self.config.activ_modul = "volumes"
+        self.config.activ_modul = "volume"
         volumes = []
         for volume in self.config.config_iteral("volume"):
             volumes.append(self.set_volume(volume))
@@ -52,6 +52,7 @@ class Volumes(VolumeDrives):
 
     def set_volume(self, volume):
         """Erstelle ein Volume Object"""
+        self.config.activ_modul = "volume"
         if self.config.has_option(volume, "label"):
             label = self.config.get_object(volume, "label").split(",")
             if len(label) < 2:

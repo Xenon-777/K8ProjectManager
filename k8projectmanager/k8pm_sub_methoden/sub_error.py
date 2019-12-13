@@ -28,11 +28,40 @@ class ErrorHandling(object):
         return False
 
     @staticmethod
-    def pprint_to_dic(print_object):
+    def pprint_to_dic(print_object, verbose=False):
         try:
-            pprint(print_object.to_dict())
+            if verbose:
+                pprint(print_object.to_dict())
+            else:
+                pprint(ErrorHandling.get_dict(print_object.to_dict()))
         except AttributeError as e:
             print("Print fail: %s" % e)
+
+    @staticmethod
+    def get_dict(raw_dict):
+        out_dict = {}
+        for key in raw_dict.keys():
+            if raw_dict[key] is not None:
+                if type(raw_dict[key]) is list:
+                    out_dict[key] = ErrorHandling.get_list(raw_dict[key])
+                elif type(raw_dict[key]) is dict:
+                    out_dict[key] = ErrorHandling.get_dict(raw_dict[key])
+                else:
+                    out_dict[key] = raw_dict[key]
+        return out_dict
+
+    @staticmethod
+    def get_list(raw_list):
+        out_list = []
+        for item in raw_list:
+            if item is not None:
+                if type(item) is list:
+                    out_list.append(ErrorHandling.get_list(item))
+                elif type(item) is dict:
+                    out_list.append(ErrorHandling.get_dict(item))
+                else:
+                    out_list.append(item)
+        return out_list
 
     @staticmethod
     def print_error_config(config, text, static_var=None, bold=False):

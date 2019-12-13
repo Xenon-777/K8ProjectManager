@@ -11,10 +11,10 @@ class Namespace(object):
         super().__init__()
         self.config = None
         self.language = None
-        self.k8pg_option_to_section.update({"namespace": {"__section__": [False],
-                                                          "name":        [True,
-                                                                          False,
-                                                                          "Text"]}})
+        self.k8pg_option_to_section.update(dict(namespace={"__section__": (False,),
+                                                           "name":        (True,
+                                                                           False,
+                                                                           "Text")}))
 
     def set_namespace(self):
         """Erstelt das NameSpace Object"""
@@ -25,11 +25,11 @@ class Namespace(object):
             if not item.startswith("volume"):
                 namespace = True
         if namespace:
-            if not self.config.has_section("namespace"):
-                self.config.add_section("namespace")
-                self.config.set("namespace", "name", self.config.project_name)
-            metadata = K8Meta(name=self.config.get_object("namespace", "name"))
+            if not self.config.has_section("namespace1"):
+                self.config.add_section("namespace1")
+                self.config.set("namespace1", "name", self.config.project_name)
+            metadata = K8Meta(name=self.config.get_object("namespace1", "name"))
         else:
             return None
 
-        return K8NameSpace(metadata=metadata)
+        return [K8NameSpace(metadata=metadata)]

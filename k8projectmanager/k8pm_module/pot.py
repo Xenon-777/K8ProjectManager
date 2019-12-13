@@ -17,97 +17,107 @@ class Pot(object):
         super().__init__()
         self.config = None
         self.language = None
-        self.k8pg_option_to_section.update({"pot": {"__section__": [False],
-                                                    "name":        [True,
-                                                                    False,
-                                                                    "Text"],
-                                                    "image":       [False,
-                                                                    False,
-                                                                    "Text"],
-                                                    "ports":       [True,
-                                                                    False,
-                                                                    "Zahlen_List"],
-                                                    "env":         [True,
-                                                                    True,
-                                                                    "Text@"],
-                                                    "env_value":   [True,
-                                                                    True,
-                                                                    "Text@"],
-                                                    "command":     [True,
-                                                                    False,
-                                                                    "Text"],
-                                                    "arg":         [True,
-                                                                    True,
-                                                                    "Text@"],
-                                                    "volume":      [True,
-                                                                    True,
-                                                                    "Text@"],
-                                                    "volume_path": [True,
-                                                                    True,
-                                                                    "Path@"],
-                                                    }})
+        self.k8pg_option_to_section.update(dict(container={"__section__": (False,),
+                                                           "name":        (True,
+                                                                           False,
+                                                                           "Text"),
+                                                           "image":       (False,
+                                                                           False,
+                                                                           "Text"),
+                                                           "ports":       (True,
+                                                                           False,
+                                                                           "Zahlen_List"),
+                                                           "env":         (True,
+                                                                           True,
+                                                                           "Text@"),
+                                                           "env_value":   (True,
+                                                                           True,
+                                                                           "Text@"),
+                                                           "command":     (True,
+                                                                           False,
+                                                                           "Text"),
+                                                           "arg":         (True,
+                                                                           True,
+                                                                           "Text@"),
+                                                           "volume":      (True,
+                                                                           True,
+                                                                           "Text@"),
+                                                           "volume_path": (True,
+                                                                           True,
+                                                                           "Path@"),
+                                                           "pull":        (True,
+                                                                           False,
+                                                                           "Always,IfNotPresent,Never"),
+                                                           }))
 
-    def set_container(self):
+    def set_container(self, deploy_index):
         """Erstellt ein Pod/Container Object"""
-        self.config.activ_modul = "pot"
+        pot = "container%s" % deploy_index
+        template = "template%s" % deploy_index
+        self.config.activ_modul = "container"
 
         # Ermittle Image
-        image = self.config.get_object("container", "image")
+        image = self.config.get_object(pot, "image")
         if image is not None:
-            if not self.config.has_option("container", "name"):
-                name = sub("[:/.]", "-", self.config.get_object("container", "image"))
-                self.config.set("container", "name", name)
+            if not self.config.has_option(pot, "name"):
+                name = sub("[:/.]", "-", self.config.get_object(pot, "image"))
+                self.config.set(pot, "name", name)
         else:
             ErrorHandling.print_error_config(self.config, self.language["con02"], locals(), bold=True)
             return None
 
         # Ermitle Ports
         ports = []
-        if self.config.has_option("container", "ports"):
-            pre_ports = self.config.config_iteral("template", "port")
+        if self.config.has_option(pot, "ports"):
+            pre_ports = self.config.config_iteral(template, "port")
             pre_ports = len(pre_ports)
-            if self.config.has_option("template", "port"):
+            if self.config.has_option(template, "port"):
                 pre_ports = pre_ports - 1
-            for port in self.config.get_object("container", "ports").split(","):
+            for port in self.config.get_object(pot, "ports").split(","):
                 ports.append(K8Port(container_port=int(port)))
                 pre_ports = pre_ports + 1
-                self.config.set("template", "port%i" % pre_ports, port)
+                self.config.set(template, "port%i" % pre_ports, port)
                 if pre_ports == 1:
-                    self.config.set("template", "port", port)
+                    self.config.set(template, "port", port)
         if not ports:
             ports = None
 
         envs = []
-        for env in self.config.config_iteral("container", "env", no="_value"):
-            envs.append(self.set_container_env("container", env))
+        for env in self.config.config_iteral(pot, "env", no="_value"):
+            envs.append(self.set_container_env(pot, env))
         if not envs:
             envs = None
 
-        if self.config.has_option("container", "command"):
-            command = self.config.get_object("container", "command").split(" ")
+        if self.config.has_option(pot, "command"):
+            command = self.config.get_object(pot, "command").split(" ")
         else:
             command = None
 
+        if self.config.has_option(pot, "pull"):
+            pull = self.config.get_object(pot, "pull")
+        else:
+            pull = "Always"
+
         args = []
-        for arg in self.config.config_iteral("container", "arg"):
-            args.append(self.set_container_arg("container", arg))
+        for arg in self.config.config_iteral(pot, "arg"):
+            args.append(self.set_container_arg(pot, arg))
         if not args:
             args = None
 
         volumes = []
-        for volume in self.config.config_iteral("container", "volume", pre="_path"):
-            volumes.append(self.set_container_volume("container", volume))
+        for volume in self.config.config_iteral(pot, "volume", pre="_path"):
+            volumes.append(self.set_container_volume(pot, volume, deploy_index))
         if not volumes:
             volumes = None
 
-        return [K8Container(name=self.config.get_object("container", "name"),
-                            image=self.config.get_object("container", "image"),
+        return [K8Container(name=self.config.get_object(pot, "name"),
+                            image=self.config.get_object(pot, "image"),
                             command=command,
                             args=args,
                             env=envs,
                             volume_mounts=volumes,
                             ports=ports,
-                            image_pull_policy="Always")]
+                            image_pull_policy=pull)]
 
     def set_container_env(self, container, env_nr):
         """Ermitlung der ENV Definition in einen Pod/Container Object"""
@@ -133,12 +143,13 @@ class Pot(object):
             arg = self.config.get_object(container, arg_nr)
         return arg
 
-    def set_container_volume(self, container, volume_path):
+    def set_container_volume(self, container, volume_path, deploy_index):
         """Ermitlung der persitent Volume Definitionen in einen Pod/Container Object"""
+        template = "template%s" % deploy_index
         volume_nr = volume_path.split("_")[0]
 
         path = self.config.get_object(container, volume_path)
-        if path.startswith("@"):
+        if path.startswith("@co"):
             alter_container = path[1:]
             self.config.copy_option_to_option(alter_container, container, volume_nr, change=True)
             self.config.copy_option_to_option(alter_container, container, volume_path, change=True)
@@ -146,11 +157,13 @@ class Pot(object):
         name = None
         if self.config.has_option(container, volume_nr):
             name = self.config.get_object(container, volume_nr)
-            if name.startswith("@"):
-                self.config.copy_option_to_option("template", container, name[1:], to_option=volume_nr, iteral=False)
+            if name.startswith("@vo"):
+                self.config.copy_option_to_option(template, container, name[1:], to_option=volume_nr, iteral=False)
         else:
-            if self.config.has_option("template", volume_nr):
-                self.config.copy_option_to_option("template", container, volume_nr, iteral=False)
+            if self.config.has_option(template, volume_nr):
+                self.config.copy_option_to_option(template, container, volume_nr, iteral=False)
+            elif self.config.has_option(template, "volume%s" % deploy_index):
+                self.config.copy_option_to_option(template, container, "volume%s" % deploy_index, to_option=volume_nr, iteral=False)
         name = self.config.get_object(container, volume_nr)
         if name is None:
             self.config.config_status = ErrorHandling.print_error_config(self.config, self.language["con03"], locals(), bold=True)

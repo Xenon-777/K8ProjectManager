@@ -10,14 +10,14 @@ class Secrets(SecretSystem):
 
     def __init__(self):
         super().__init__()
-        self.k8pg_option_to_section["secrets"].update({"__section__": [True],
-                                                       "type":        [False,
-                                                                       False,
-                                                                       "tls"]})
+        self.k8pg_option_to_section["secret"].update({"__section__": (True,),
+                                                      "type":        (False,
+                                                                      False,
+                                                                      "tls")})
 
     def set_secrets(self):
         """Esstellt das Secret Object"""
-        self.config.activ_modul = "secrets"
+        self.config.activ_modul = "secret"
         secrets = []
         for secret in self.config.config_iteral("secret"):
             k8pg_secret = self.k8_secret.get(self.config.get_object(secret, "type"), None)

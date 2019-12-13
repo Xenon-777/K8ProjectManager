@@ -205,6 +205,7 @@ class K8ProjectGenerator(K8pgModule):
         """Erstelle die Kubernetes Body und K8PojectGenerator Objecte"""
         self.config = ConfigObject(project_name, self.k8pg_option_to_section, self.arg.verbose)
         self.config.read(file)
+        self.set_config_singular()
         for k8pg_modul in self.k8_modul_interal:
             self.k8_object[k8pg_modul] = self.k8_modul[k8pg_modul]["k8pg_methode"]()
 
@@ -220,11 +221,8 @@ class K8ProjectGenerator(K8pgModule):
         if self.k8_activ:
             for k8pg_modul in self.k8_modul_interal:
                 if self.k8_object[k8pg_modul] is not None:
-                    if type(self.k8_object[k8pg_modul]) is list:
-                        for body in self.k8_object[k8pg_modul]:
-                            self.make_object(k8pg_modul, body)
-                    else:
-                        self.make_object(k8pg_modul, self.k8_object[k8pg_modul])
+                    for body in self.k8_object[k8pg_modul]:
+                        self.make_object(k8pg_modul, body)
 
     def make_object(self, k8pg_name, body):
         """Sub Methode zu generate_project für die einzelnen Kubernetes Objecte"""
@@ -234,7 +232,7 @@ class K8ProjectGenerator(K8pgModule):
             if k8pg_name in self.k8_modul_no_namespace:
                 api_response = self.k8_modul[k8pg_name]["k8_methode"](body=body, pretty="true")
             else:
-                api_response = self.k8_modul[k8pg_name]["k8_methode"](namespace=self.config.get_object("namespace", "name"), body=body, pretty="true")
+                api_response = self.k8_modul[k8pg_name]["k8_methode"](namespace=self.config.get_object("namespace1", "name"), body=body, pretty="true")
             print("%s Opject: %s (Type: %s)" % (Color.color_text(" CREATE ", color=Color.BOLD, long=20, fill="-"), body_dict["metadata"]["name"], k8pg_name))
             pprint(api_response)
             sleep(1)
@@ -247,7 +245,7 @@ class K8ProjectGenerator(K8pgModule):
                 if k8pg_name in self.k8_modul_no_namespace:
                     api_response = self.k8_patch[k8pg_name]["k8_methode"](name=body_dict["metadata"]["name"], body=body, pretty="true")
                 else:
-                    api_response = self.k8_patch[k8pg_name]["k8_methode"](name=body_dict["metadata"]["name"], namespace=self.config.get_object("namespace", "name"), body=body, pretty="true")
+                    api_response = self.k8_patch[k8pg_name]["k8_methode"](name=body_dict["metadata"]["name"], namespace=self.config.get_object("namespace1", "name"), body=body, pretty="true")
                 print("%s Opject: %s (Type: %s)" % (Color.color_text(" UPDATE ", color=Color.BOLD, long=20, fill="-"), body_dict["metadata"]["name"], k8pg_name))
                 pprint(api_response)
                 sleep(1)
@@ -270,22 +268,12 @@ class K8ProjectGenerator(K8pgModule):
             print(Color.color_text(" Project: %s " % self.config.project_name, long=70, fill="*"))
             for k8pg_modul in self.k8_modul_interal:
                 if self.k8_object[k8pg_modul] is not None:
-                    if type(self.k8_object[k8pg_modul]) is list:
-                        if len(self.k8_object[k8pg_modul]) > 1:
-                            index = 0
-                            for body in self.k8_object[k8pg_modul]:
-                                index = index + 1
-                                print(Color.color_text(" %s%i " % (k8pg_modul, index), long=60, fill="#"))
-                                print(type(body))
-                                ErrorHandling.pprint_to_dic(body)
-                        else:
-                            print(Color.color_text(" %s " % k8pg_modul, long=60, fill="#"))
-                            print(type(self.k8_object[k8pg_modul][0]))
-                            ErrorHandling.pprint_to_dic(self.k8_object[k8pg_modul][0])
-                    else:
-                        print(Color.color_text(" %s " % k8pg_modul, long=60, fill="#"))
-                        print(type(self.k8_object[k8pg_modul]))
-                        ErrorHandling.pprint_to_dic(self.k8_object[k8pg_modul])
+                    index = 0
+                    for body in self.k8_object[k8pg_modul]:
+                        index = index + 1
+                        print(Color.color_text(" %s%i " % (k8pg_modul, index), long=60, fill="#"))
+                        print(type(body))
+                        ErrorHandling.pprint_to_dic(body, self.config.verbose)
 
     def print_config(self):
         """Gibt die möglichen Config Sectoren mit ihren Optionen und deren Specifikationen aus"""

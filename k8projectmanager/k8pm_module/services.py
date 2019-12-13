@@ -15,32 +15,32 @@ class Services(object):
         super().__init__()
         self.config = None
         self.language = None
-        self.k8pg_option_to_section.update({"services": {"__section__":   [True],
-                                                         "name":          [True,
+        self.k8pg_option_to_section.update(dict(service={"__section__":   (True,),
+                                                         "name":          (True,
                                                                            False,
-                                                                           "Text"],
-                                                         "template":      [True,
+                                                                           "Text"),
+                                                         "template":      (True,
                                                                            False,
-                                                                           "Text_List"],
-                                                         "extern_ips":    [True,
+                                                                           "Text_List"),
+                                                         "extern_ips":    (True,
                                                                            False,
-                                                                           "IP"],
-                                                         "port":          [False,
+                                                                           "IP"),
+                                                         "port":          (False,
                                                                            True,
-                                                                           "Zahl"],
-                                                         "port_name":     [True,
+                                                                           "Zahl"),
+                                                         "port_name":     (True,
                                                                            True,
-                                                                           "Text"],
-                                                         "port_target":   [True,
+                                                                           "Text"),
+                                                         "port_target":   (True,
                                                                            True,
-                                                                           "Zahl@"],
-                                                         "port_protocol": [True,
+                                                                           "Zahl@"),
+                                                         "port_protocol": (True,
                                                                            True,
-                                                                           "TCP,UDP"]}})
+                                                                           "TCP,UDP")}))
 
     def set_services(self):
         """Handhabung von scalirten Service Definitionen"""
-        self.config.activ_modul = "services"
+        self.config.activ_modul = "service"
         services = []
         for service in self.config.config_iteral("service"):
             services.append(self.set_service(service))
@@ -51,19 +51,21 @@ class Services(object):
 
     def set_service(self, service):
         """Erstelt ein Service Object"""
-        metadata = {"labels": {"name": None},
-                    "name":   None}
-        spec = {"ports":    [],
-                "selector": None}
+        index = service.replace("service", "")
+        self.config.activ_modul = "service"
+        template_index = "template%s" % index
 
         if not self.config.has_option(service, "name"):
             self.config.set(service, "name", "%s-%s" % (self.config.project_name, service))
         name = self.config.get_object(service, "name")
 
-        if not self.config.has_option(service, "template") and self.config.has_option("template", "label"):
-            self.config.copy_option_to_option("template", service, "label", to_option="template")
+        if not self.config.has_option(service, template_index) and self.config.has_option(template_index, "label"):
+            self.config.copy_option_to_option(template_index, service, "label", to_option="template")
         if self.config.has_option(service, "template"):
             template = self.config.get_object(service, "template")
+            if template.startswith("@t"):
+                self.config.copy_option_to_option(template[1:], service, "label", to_option="template", iteral=False, change=True)
+                template = self.config.get_object(service, "template")
             template = template.split(",")
             if not len(template) == 2:
                 self.config.config_status = ErrorHandling.print_error_config(self.config, "%s (%s)" % (self.language["ser06"], service), locals(), bold=True)
@@ -78,13 +80,13 @@ class Services(object):
 
         ports = []
         for port in self.config.config_iteral(service, "port", no="_"):
-            service_port = self.set_service_port(service, port)
+            service_port = self.set_service_port(service, port, template_index)
             if service_port is None:
                 self.config.config_status = ErrorHandling.print_error("%s (%s)" % (self.language["ser02"], service))
                 return None
-            ports.append(self.set_service_port(service, port))
+            ports.append(self.set_service_port(service, port, template_index))
         if not ports:
-            self.config.config_status = ErrorHandling.print_error_config(self.config, "%s (%s)" % (self.language["ser03"], metadata["name"]), locals(), bold=True)
+            self.config.config_status = ErrorHandling.print_error_config(self.config, "%s (%s)" % (self.language["ser03"], name), locals(), bold=True)
             ports = self.config.config_iteral(service, "port", no="_")
             if len(ports) == 0:
                 self.config.config_status = ErrorHandling.print_error("%s (%s)" % (self.language["ser01"], service))
@@ -97,22 +99,24 @@ class Services(object):
                       ports=ports)
         return K8Service(metadata=metadata, spec=spec)
 
-    def set_service_port(self, service, port):
+    def set_service_port(self, service, port, template):
         """Port Definitions Ermitlung für das Service Object"""
         port_target = "%s_target" % port
 
         if self.config.has_option(service, port_target):
             port_intern = self.config.get_object(service, port_target)
             if port_intern.startswith("@c"):
-                container_ports = self.config.get_object(port_intern[1:], "ports", modul="pot")
+                if port_intern == "@container":
+                    port_intern = "@container1"
+                container_ports = self.config.get_object(port_intern[1:], "ports", modul="container")
                 if container_ports is None:
                     self.config.config_status = ErrorHandling.print_error_config(self.config, "%s ( %s, %s, %s)" % (self.language["ser01"], port_intern, port, service), locals(), bold=True)
                     return None
                 container_ports = container_ports.split(",")
                 self.config.set(service, port_target, container_ports[0])
         else:
-            if self.config.has_option("template", port):
-                self.config.copy_option_to_option("template", service, port, to_option=port_target, iteral=False)
+            if self.config.has_option(template, port):
+                self.config.copy_option_to_option(template, service, port, to_option=port_target, iteral=False)
             else:
                 return None
 

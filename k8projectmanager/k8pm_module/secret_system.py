@@ -15,15 +15,15 @@ class SecretSystem(object):
         super().__init__()
         self.config = None
         self.language = None
-        self.k8pg_option_to_section.update({"secrets": {"name":    [True,
+        self.k8pg_option_to_section.update(dict(secret={"name":    (True,
                                                                     False,
-                                                                    "Text"],
-                                                        "tls_key": [True,
+                                                                    "Text"),
+                                                        "tls_key": (True,
                                                                     False,
-                                                                    "File@"],
-                                                        "tls_crt": [False,
+                                                                    "File@"),
+                                                        "tls_crt": (False,
                                                                     False,
-                                                                    "File"]}})
+                                                                    "File")}))
         self.k8_secret = {"tls": self.tls}
 
     def set_metadata(self, secret):

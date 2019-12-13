@@ -85,7 +85,7 @@ class K8ProjectDeleter(K8ProjectGenerator):
                 else:
                     api_response = None
             else:
-                api_response = self.k8_delete[k8pg_name]["k8_methode"](namespace=self.config.get_object("namespace", "name"), name=body_dict["metadata"]["name"], pretty="true")
+                api_response = self.k8_delete[k8pg_name]["k8_methode"](namespace=self.config.get_object("namespace1", "name"), name=body_dict["metadata"]["name"], pretty="true")
             if api_response is not None:
                 print("%s Opject: %s (Type: %s)" % (Color.color_text(" DELETE ", color=Color.BOLD, long=20, fill="-"), body_dict["metadata"]["name"], k8pg_name))
                 pprint(api_response)
