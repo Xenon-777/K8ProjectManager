@@ -19,7 +19,7 @@ setup(
     - Service
     - Ingress""",
     author='Juergen Ofner',
-    version='0.64',
+    version='0.1',
     packages=find_packages(),
     entry_points={
         'console_scripts': ['k8projectgenerator=k8projectmanager.k8projectgenerator:start',
